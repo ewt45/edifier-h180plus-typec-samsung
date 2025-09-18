@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Allow any USB device to trigger the intent filter -->
+    <!-- You can be more specific by adding vendor-id and product-id attributes -->
+    <!-- Example: <usb-device vendor-id="1234" product-id="5678" /> -->
+
+<!--    manufacturerName = "EDFIER", productName = "H180 Plus (Type C)", productId = 40998, vendorId = 11673 -->
+    <usb-device vendor-id="11673" product-id="40998"/>
+<!--   这样就是允许全部设备 <usb-device />-->
+</resources>
