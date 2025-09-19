@@ -5,16 +5,14 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.IntentCompat
+import androidx.core.graphics.drawable.IconCompat
 import org.ewt45.edifier_180plustypec_samsung.R
 
 class UsbConnectException(message: String) : Exception(message)
@@ -91,6 +89,7 @@ class MainService : Service() {
     private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
         .setContentTitle("漫步者Typec耳机")
         .setContentText("已连接，播放音频不会发出滴滴声")
-        .setSmallIcon(R.mipmap.ic_launcher) // Replace with your app's icon
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setColor(0xffA1BAE5.toInt())
         .build()
 }
