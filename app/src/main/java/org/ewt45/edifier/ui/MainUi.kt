@@ -1,97 +1,138 @@
 package org.ewt45.edifier.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
+import android.Manifest.permission.RECORD_AUDIO
+import android.content.Intent
+import android.provider.Settings
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.ewt45.edifier.ui.theme.Edifier180plustypecsamsungTheme
+import androidx.core.net.toUri
+import org.ewt45.edifier.tool.checkIsIgnoringBatteryOptimizations
+import org.ewt45.edifier.tool.checkNotifyPermission
+import org.ewt45.edifier.tool.checkPermission
+import org.ewt45.edifier.ui.theme.GreenText
+import org.ewt45.edifier.ui.theme.RedText
+
 
 @Composable
-fun MainScreen(name: String, modifier: Modifier = Modifier) {
-    AudioRecordingPermissionRequester()
+fun MainScreen(message: String, modifier: Modifier = Modifier) {
+    val TAG = "MainScreen"
+    val ctx = LocalContext.current
 
-    Text(
-        text = name, // Display USB status or original greeting
+    // 录音权限
+    var isAudioable by remember { mutableStateOf(checkPermission(ctx, RECORD_AUDIO)) }
+    val audioLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission())
+    { isGranted: Boolean -> isAudioable = isGranted }
+
+    // 通知权限
+    var isNotifiable by remember { mutableStateOf(checkNotifyPermission(ctx)) }
+    // 安卓13以上可以用这个。还是用通用的吧
+//    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission())  { isGranted: Boolean -> isNotifiable = isGranted }
+    val notifyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult())
+    { isNotifiable = checkNotifyPermission(ctx) }
+
+    // 电池优化
+    var isIgnoreBatteryOpt by remember { mutableStateOf(checkIsIgnoringBatteryOptimizations(ctx)) }
+    val ignoreBatteryOptLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult())
+    { isIgnoreBatteryOpt = checkIsIgnoringBatteryOptimizations(ctx) }
+
+
+    Column(
         modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(message)
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // 录音权限
+        Text("录音权限: " + if (isAudioable) "已授予" else "未授予", color = if (isAudioable) GreenText else RedText)
+        Button(onClick = { if (!isAudioable) audioLauncher.launch(RECORD_AUDIO) })
+        { Text("点击授权") }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 通知权限
+        Text("通知权限: " + if (isNotifiable) "已授予" else "未授予", color = if (isNotifiable) GreenText else RedText)
+        Button(onClick = {
+            if (!isNotifiable) notifyLauncher.launch(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = "package:${ctx.packageName}".toUri() })
+//                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        })
+        { Text(if (isNotifiable) "通知权限已授予" else "申请通知权限") }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 电池优化
+        Text("关闭电池优化: " + if (isIgnoreBatteryOpt) "已关闭" else "未关闭", color = if (isIgnoreBatteryOpt) GreenText else RedText)
+        Text("提示1：点击按钮后，通过左上角搜索快速定位到app，然后取消勾选。\n提示2: 如果打开的是应用信息界面，点击“电池”，选择“不受限制”。", fontSize = 14.sp, textAlign = TextAlign.Center)
+        Button(onClick = {
+            val intent = Intent().apply {
+                action = Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+//                data = "package:${ctx.packageName}".toUri() //加了这个反而无法启动
+            }
+            try {
+                ignoreBatteryOptLauncher.launch(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "MainScreen: ", e)
+                ctx.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = "package:${ctx.packageName}".toUri() })
+            }
+        }) {
+            Text("关闭电池优化")
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainTopBar() {
+    TopAppBar(
+        title = { Text("设置") },
     )
 }
 
-
+@Preview(widthDp = 320, heightDp = 640)
 @Composable
-fun AudioRecordingPermissionRequester() {
-    val context = LocalContext.current
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO
-            ) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        hasPermission = isGranted
-        if (isGranted) {
-            // 权限已授予，您可以开始录音了
-            // TODO: 在此处添加您的录音逻辑或更新UI状态
-            println("录音权限已授予")
-        } else {
-            // 权限被拒绝。
-            // 您可能需要向用户解释为什么需要此权限，
-            // 或者禁用需要此权限的功能。
-            // TODO: 处理权限被拒绝的情况
-            println("录音权限被拒绝")
-        }
-    }
-
-    // 在 Composable 首次组合时检查并请求权限
-    LaunchedEffect(Unit) { // Unit 作为 key 表示此 LaunchedEffect 只在首次组合时运行
-        if (!hasPermission) {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }
-    }
-
-//    // UI部分可以根据需要保留或修改
-//    Column {
-//        Text(if (hasPermission) "录音权限已授予" else "录音权限尚未授予")
-//
-//        if (hasPermission) {
-//            Button(onClick = {
-//                // 执行录音相关操作
-//                println("开始录音操作...")
-//            }) {
-//                Text("开始录音")
-//            }
-//        } else {
-//            Button(onClick = {
-//                // 如果用户想再次尝试，可以提供一个按钮
-//                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-//            }) {
-//                Text("再次请求录音权限")
-//            }
-//        }
-//    }
+fun MainTopBarPreview() {
+    MainTopBar()
 }
-
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     Edifier180plustypecsamsungTheme {
-        // Preview with a default status as UsbHelper won't be active in preview
         MainScreen("No USB device connected (Preview)")
     }
 }

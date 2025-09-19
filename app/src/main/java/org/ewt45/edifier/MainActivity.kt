@@ -10,11 +10,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import org.ewt45.edifier.ui.theme.Edifier180plustypecsamsungTheme
 import org.ewt45.edifier.ui.MainScreen
+import org.ewt45.edifier.ui.MainTopBar
 
 const val ACTION_USB_PERMISSION = "org.ewt45.edifier.USB_PERMISSION"
 
 class MainActivity : ComponentActivity() {
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,9 +23,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             Edifier180plustypecsamsungTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = { MainTopBar() },
+                ) { innerPadding ->
                     MainScreen(
-                        name = UsbHelper.usbDeviceStatus.value, // Use status from UsbHelper
+                        message = UsbHelper.usbDeviceStatus.value, // Use status from UsbHelper
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
