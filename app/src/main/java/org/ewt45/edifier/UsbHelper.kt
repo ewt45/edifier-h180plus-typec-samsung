@@ -1,6 +1,7 @@
 package org.ewt45.edifier
 
 import android.app.PendingIntent
+import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -15,37 +16,46 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
 import androidx.core.content.IntentCompat
+import org.ewt45.edifier.tool.filterUsbDevice
+
+const val ACTION_USB_PERMISSION = "org.ewt45.edifier.USB_PERMISSION"
+const val ACTION_CHECK_USB_MANUALLY = "org.ewt45.edifier.CHECK_USB_MANUALLY"
 
 private const val TAG = "UsbHelper"
 
 class UsbHelper(private val context: Context) {
 
     companion object {
-        val usbDeviceStatus: MutableState<String> = mutableStateOf("No USB device connected")
+        val usbDeviceStatus: MutableState<String> = mutableStateOf("耳机未连接")
     }
 
     private val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
     val permissionIntent = createUsbPermissionIntent()
+    val usbPmsLock = Any()
 
     private val usbReceiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context?, intent: Intent?) {
             intent ?: return
-            handleIntent(intent)
+            try {
+                handleIntent(intent)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun register() {
         val filter = IntentFilter().apply {
 //            addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
-//            addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+            addAction(UsbManager.ACTION_USB_DEVICE_DETACHED) //usb断开需要动态注册监听
             addAction(ACTION_USB_PERMISSION)
         }
         ContextCompat.registerReceiver(
             context,
             usbReceiver,
             filter,
-            RECEIVER_NOT_EXPORTED
-        ) // Use Context.RECEIVER_EXPORTED for Android 12+
+            RECEIVER_NOT_EXPORTED //也能收到系统回调
+        )
         Log.i(TAG, "USB Receiver registered")
     }
 
@@ -62,40 +72,41 @@ class UsbHelper(private val context: Context) {
      * @throws UsbConnectException 处理失败时
      */
     fun handleIntent(intent: Intent) {
-        val device: UsbDevice =
-            IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-                ?: return
+        val device: UsbDevice? =
+            if (intent.action == ACTION_CHECK_USB_MANUALLY) filterUsbDevice(context)
+            else IntentCompat.getParcelableExtra(intent, UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
+
+        if (device == null) throw UsbConnectException("未找到连接的设备")
         when (intent.action) {
             UsbManager.ACTION_USB_DEVICE_ATTACHED -> {
                 // 在device_filter.xml中设置筛选edfier h180 plus, 这里不再校验
                 // 根据官方文档，通过intent-filter获取的设备自动获得权限
                 Log.d(TAG, "handleIntent: 检测到typec耳机连接")
-                usbDeviceStatus.value =
-                    "USB device attached (intent): ${device.deviceName} (${device.vendorId}:${device.productId})"
-                //FIXME service中注册广播好像不会收到？
+                usbDeviceStatus.value = "耳机已连接"
                 if (!usbManager.hasPermission(device))
-                    usbManager.requestPermission(device, permissionIntent)
+                    throw UsbConnectException("没有USB设备权限")//usbManager.requestPermission(device, createUsbPermissionIntent())
                 else
                     connectUsbDevice(device)
             }
 
             UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                device.let {
-                    Log.i(TAG, "USB device detached: ${it.deviceName}")
-                    usbDeviceStatus.value = "USB device detached: ${it.deviceName}"
-                }
-                throw UsbConnectException("usb设备断开连接")
+                // usb断开是动态注册的，需要筛选一下
+                if (device.vendorId != 11673 || device.productId != 40998)
+                    return
+                usbDeviceStatus.value = "耳机已断开"
+                Log.i(TAG, "handleIntent: 检测到typec耳机断开连接")
+                // 断开连接时停止服务，关闭通知
+                context.stopService(Intent(context, MainService::class.java))
             }
             //检测到设备接入后 申请权限
-            ACTION_USB_PERMISSION -> {
-                synchronized(this) {
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        connectUsbDevice(device)
-                    } else {
-                        Log.w(TAG, "Permission denied for device ${device.deviceName}")
-                    }
-                }
-            }
+//            ACTION_USB_PERMISSION -> {
+//                synchronized(usbPmsLock) {
+//                    val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
+//                    Log.d(TAG, "handleIntent: 申请usb设备权限 granted=$granted")
+//                    if (granted)
+//                        connectUsbDevice(device)
+//                }
+//            }
         }
     }
 

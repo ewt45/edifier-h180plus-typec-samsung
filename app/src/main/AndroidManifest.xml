@@ -31,8 +31,7 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:noHistory="true"
-            android:taskAffinity=""
-            android:theme="@style/Theme.Edifier180plustypecsamsung">
+            android:theme="@style/Theme.TransparentActivity">
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>

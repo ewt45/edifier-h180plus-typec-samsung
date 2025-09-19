@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="Theme.Edifier180plustypecsamsung" parent="android:Theme.Material.NoActionBar" />
 
-    <style name="Theme.Edifier180plustypecsamsung" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 为 TransitionActivity 创建的透明主题 -->
+    <style name="Theme.TransparentActivity" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
 </resources>

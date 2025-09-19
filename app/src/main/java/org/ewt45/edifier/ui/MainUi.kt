@@ -9,11 +9,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
@@ -38,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ewt45.edifier.ui.theme.Edifier180plustypecsamsungTheme
 import androidx.core.net.toUri
+import org.ewt45.edifier.MainService
+import org.ewt45.edifier.TransitionActivity
 import org.ewt45.edifier.tool.checkIsIgnoringBatteryOptimizations
 import org.ewt45.edifier.tool.checkNotifyPermission
 import org.ewt45.edifier.tool.checkPermission
@@ -76,6 +80,19 @@ fun MainScreen(message: String, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(message)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row {
+            Button(onClick = { TransitionActivity.startAndCheckManually(ctx) })
+            { Text("手动开启") }
+
+            Spacer(Modifier.width(16.dp))
+
+            Button(onClick = { ctx.stopService(Intent(ctx, MainService::class.java)) })
+            { Text("手动关闭") }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // 录音权限

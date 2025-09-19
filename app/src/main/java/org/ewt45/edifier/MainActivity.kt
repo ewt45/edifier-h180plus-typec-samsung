@@ -1,6 +1,7 @@
 package org.ewt45.edifier
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,12 +13,11 @@ import org.ewt45.edifier.ui.theme.Edifier180plustypecsamsungTheme
 import org.ewt45.edifier.ui.MainScreen
 import org.ewt45.edifier.ui.MainTopBar
 
-const val ACTION_USB_PERMISSION = "org.ewt45.edifier.USB_PERMISSION"
-
 class MainActivity : ComponentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("MainActivity", "onCreate: ")
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 

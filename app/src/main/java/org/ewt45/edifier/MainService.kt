@@ -19,12 +19,16 @@ import org.ewt45.edifier_180plustypec_samsung.R
 
 class UsbConnectException(message: String) : Exception(message)
 
+const val ACTION_SERVICE_CREATED = "org.ewt45.edifier.SERVICE_CREATED"
+const val ACTION_SERVICE_DESTROYED = "org.ewt45.edifier.SERVICE_DESTROYED"
+
 private const val TAG = "MainService"
 private const val CHANNEL_ID = "MainServiceChannel"
 private const val NOTIFICATION_ID = 1
 
 class MainService : Service() {
     private lateinit var usbHelper: UsbHelper
+    private lateinit var notification: Notification
 
     override fun onBind(intent: Intent): IBinder? {
         return null
@@ -32,9 +36,11 @@ class MainService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "onCreate: MainService创建")
         usbHelper = UsbHelper(applicationContext)
         usbHelper.register()
         createNotificationChannel()
+        notification = createNotification()
     }
 
 
@@ -56,7 +62,7 @@ class MainService : Service() {
         // 尝试处理
         try {
             usbHelper.handleIntent(usbIntent)
-            startForeground()
+            startForeground() // !!这个要放这里才行，放开头无条件运行就会系统卡死!!
             Log.i(TAG, "前台服务正在运行")
         } catch (e: Exception) {
             Log.e(TAG, "onStartCommand: 服务处理intent时出错", e)
@@ -68,7 +74,7 @@ class MainService : Service() {
 
     @SuppressLint("InlinedApi")
     private fun startForeground() = ServiceCompat.startForeground(
-        this, NOTIFICATION_ID, createNotification(),
+        this, NOTIFICATION_ID, notification,
         ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
     )
 
@@ -83,8 +89,8 @@ class MainService : Service() {
     }
 
     private fun createNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setContentTitle("Edifier Control Active")
-        .setContentText("Connected to USB device")
+        .setContentTitle("漫步者Typec耳机")
+        .setContentText("已连接，播放音频不会发出滴滴声")
         .setSmallIcon(R.mipmap.ic_launcher) // Replace with your app's icon
         .build()
 }
