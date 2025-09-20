@@ -27,10 +27,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     topBar = { MainTopBar() },
                 ) { innerPadding ->
-                    MainScreen(
-                        message = UsbHelper.usbDeviceStatus.value, // Use status from UsbHelper
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    MainScreen(modifier = Modifier.padding(innerPadding))
                 }
             }
         }

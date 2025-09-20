@@ -51,7 +51,7 @@ import org.ewt45.edifier.ui.theme.RedText
 
 
 @Composable
-fun MainScreen(message: String = "", modifier: Modifier = Modifier) {
+fun MainScreen(modifier: Modifier = Modifier) {
     val TAG = "MainScreen"
     val ctx = LocalContext.current
 
@@ -210,6 +210,6 @@ fun MainTopBarPreview() {
 @Composable
 fun GreetingPreview() {
     Edifier180plustypecsamsungTheme {
-        MainScreen("No USB device connected (Preview)")
+        MainScreen()
     }
 }
